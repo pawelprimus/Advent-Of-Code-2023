@@ -9,8 +9,12 @@ import java.util.regex.Pattern;
 
 public class DAY_01_2 {
 
-    private static final String NUMBER_REG = "\\d|one|two|three|four|five|six|seven|eight|nine";
+    private static final String DIGIT_REG = "\\d";
+    private static final String NUMBER_REG = DIGIT_REG + "|one|two|three|four|five|six|seven|eight|nine";
+    private static final String REVERSED_NUMBER_REG = DIGIT_REG + "|enin|thgie|neves|xis|evif|ruof|eerht|owt|eno";
+
     private static final Pattern MY_PATTERN = Pattern.compile(NUMBER_REG);
+    private static final Pattern MY_PATTERN_REVERSED = Pattern.compile(REVERSED_NUMBER_REG);
 
     public static void main(String[] args) throws Exception {
 
@@ -18,35 +22,28 @@ public class DAY_01_2 {
         int result = 0;
 
         for (String str : input) {
-            String num = "";
+            String numToAdd = "";
+
+            // Get first number in order
             Matcher m = MY_PATTERN.matcher(str);
-            m.find();
-            String firstNum = m.group();
-            System.out.println(firstNum);
-            if (firstNum.length() == 1) {
-                num += firstNum;
-            } else {
-                num += numberToShortNumber(firstNum);
+            String firstNum = "";
+            if (m.find()) {
+                firstNum = m.group();
             }
 
-            String secondNumber = null;
-            while (m.find()) {
-                secondNumber = m.group();
-            }
-            System.out.println(secondNumber);
-            if (secondNumber == null) {
-                num+= firstNum;
-            } else {
-                if (secondNumber.length() == 1) {
-                    num += secondNumber;
-                } else {
-                    num += numberToShortNumber(secondNumber);
+            numToAdd += firstNum.length() == 1 ? firstNum : numberToShortNumber(firstNum);
 
-                }
+            // Get first number in reversed order
+            String reversed = new StringBuilder(str).reverse().toString();
+            Matcher matcherReversed = MY_PATTERN_REVERSED.matcher(reversed);
+            String secondNumber = "";
+            if (matcherReversed.find()) {
+                secondNumber = matcherReversed.group();
             }
 
-            System.out.println(num);
-            result += Integer.valueOf(num);
+            numToAdd += secondNumber.length() == 1 ? secondNumber : numberToShortNumber(new StringBuilder(secondNumber).reverse().toString());
+
+            result += Integer.valueOf(numToAdd);
         }
 
         System.out.println("RESULT:" + result);
@@ -62,7 +59,7 @@ public class DAY_01_2 {
                 return "3";
             case "four":
                 return "4";
-            case "fixe":
+            case "five":
                 return "5";
             case "six":
                 return "6";

@@ -5,7 +5,7 @@ seed-to-soil map:
 52 50 48
 
 soil-to-fertilizer map:
-0 15 37
+0 14 37
 37 52 2
 39 0 15
 

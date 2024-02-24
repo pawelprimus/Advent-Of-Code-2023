@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 
 import static DAY_07.Type.*;
 
-public class DAY_07_1 {
+public class DAY_07_2 {
 
     private static final String DAY = "07";
 
@@ -18,15 +18,15 @@ public class DAY_07_1 {
 
         String[] input = FileReader.readFileAsString(DAY, InputType.NORMAL).split("[\\r\\n]+");
 
-        List<PokerHand> pokerHands = new ArrayList<>();
+        List<PokerHandTwo> pokerHands = new ArrayList<>();
 
         for (String str : input) {
             String[] game = str.split(" ");
-            pokerHands.add(new PokerHand(game[0], game[1]));
+            pokerHands.add(new PokerHandTwo(game[0], game[1]));
             System.out.println(str);
         }
 
-        pokerHands.sort(new PokerHandComparator());
+        pokerHands.sort(new PokerHandTwoComparator());
 
         BigInteger result = IntStream.range(0, pokerHands.size())
                 .mapToObj(i -> BigInteger.valueOf((long) (i + 1) * pokerHands.get(i).getScore()))
@@ -37,14 +37,14 @@ public class DAY_07_1 {
     }
 }
 
-class PokerHand {
+class PokerHandTwo {
 
     private final List<Integer> cardValues;
     private final int score;
     private final Type type;
     private Map<Integer, Integer> cardMap;
 
-    public PokerHand(String cards, String score) {
+    public PokerHandTwo(String cards, String score) {
         this.cardValues = initCards(cards);
         this.score = Integer.parseInt(score);
         this.cardMap = initMap(cardValues);
@@ -131,10 +131,10 @@ class PokerHand {
     }
 }
 
-class PokerHandComparator implements Comparator<PokerHand> {
+class PokerHandTwoComparator implements Comparator<PokerHandTwo> {
 
     @Override
-    public int compare(PokerHand o1, PokerHand o2) {
+    public int compare(PokerHandTwo o1, PokerHandTwo o2) {
         if (o1.getType() == o2.getType()) {
             return compareLists(o1.getCardValues(), o2.getCardValues());
         }

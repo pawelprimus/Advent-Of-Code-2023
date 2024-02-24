@@ -23,17 +23,18 @@ public class DAY_07_2 {
         for (String str : input) {
             String[] game = str.split(" ");
             pokerHands.add(new PokerHandTwo(game[0], game[1]));
-            System.out.println(str);
         }
 
         pokerHands.sort(new PokerHandTwoComparator());
+
+        pokerHands.forEach(System.out::println);
 
         BigInteger result = IntStream.range(0, pokerHands.size())
                 .mapToObj(i -> BigInteger.valueOf((long) (i + 1) * pokerHands.get(i).getScore()))
                 .reduce(BigInteger.ZERO, BigInteger::add);
 
 
-        System.out.println("RESULT: " + result); //253910319
+        System.out.println("RESULT: " + result); //254083736
     }
 }
 
@@ -42,13 +43,11 @@ class PokerHandTwo {
     private final List<Integer> cardValues;
     private final int score;
     private final Type type;
-    private Map<Integer, Integer> cardMap;
 
     public PokerHandTwo(String cards, String score) {
         this.cardValues = initCards(cards);
         this.score = Integer.parseInt(score);
-        this.cardMap = initMap(cardValues);
-        this.type = getTypeByMap(cardMap);
+        this.type = getTypeByCards(cards);
     }
 
     public List<Integer> getCardValues() {
@@ -64,8 +63,10 @@ class PokerHandTwo {
     }
 
 
-    private Map<Integer, Integer> initMap(List<Integer> cardValues) {
+    private Map<Integer, Integer> initMap(String cards) {
         Map<Integer, Integer> map = new LinkedHashMap<>();
+        List<Integer> cardValues = initCardsWithoutJokers(cards);
+
         for (Integer i : cardValues) {
             map.put(i, map.getOrDefault(i, 0) + 1);
         }
@@ -89,13 +90,24 @@ class PokerHandTwo {
         return cardsList;
     }
 
+    private List<Integer> initCardsWithoutJokers(String cards) {
+        List<Integer> cardsList = new ArrayList<>();
+        char[] splCards = cards.toCharArray();
+        for (char c : splCards) {
+            if(c != 'J'){
+                cardsList.add(mapCardToValue(c));
+            }
+        }
+        return cardsList;
+    }
+
     private int mapCardToValue(char cardSign) {
 
         return switch (cardSign) {
             case 'A' -> 14;
             case 'K' -> 13;
             case 'Q' -> 12;
-            case 'J' -> 11;
+            case 'J' -> 1;
             case 'T' -> 10;
             case '9' -> 9;
             case '8' -> 8;
@@ -109,14 +121,51 @@ class PokerHandTwo {
         };
     }
 
+    private Type getTypeByCards(String cards){
+
+        Type type = getTypeByMap(initMap(cards));
+
+        int jokers = cards.length() - cards.replace("J", "").length();
+        for (int i = 0; i < jokers; i++) {
+            type = promoteByJoker(type);
+        }
+        return type;
+    }
+
+    private Type promoteByJoker(Type type){
+        return switch (type) {
+            case FIVE_OF_A_KIND, FOUR_OF_A_KIND -> FIVE_OF_A_KIND;
+            case FULL_HOUSE, THREE_OF_A_KIND -> FOUR_OF_A_KIND;
+            case TWO_PAIR -> FULL_HOUSE;
+            case ONE_PAIR -> THREE_OF_A_KIND;
+            default -> ONE_PAIR;
+        };
+    }
+
     private Type getTypeByMap(Map<Integer, Integer> map) {
+        if(map.isEmpty()){
+            return HIGH_CARD;
+        }
         List<Integer> keys = map.keySet().stream().toList();
 
         return switch (map.get(keys.get(0))) {
             case 5 -> FIVE_OF_A_KIND;
             case 4 -> FOUR_OF_A_KIND;
-            case 3 -> map.get(keys.get(1)) == 2 ? FULL_HOUSE : THREE_OF_A_KIND;
-            case 2 -> map.get(keys.get(1)) == 2 ? TWO_PAIR : ONE_PAIR;
+            case 3 -> {
+                if (map.size() <= 1){
+                     yield THREE_OF_A_KIND;
+                } else {
+                    yield map.get(keys.get(1)) == 2 ? FULL_HOUSE : THREE_OF_A_KIND;
+                }
+            }
+            case 2 -> {
+                if (map.size() <= 1){
+                    yield ONE_PAIR;
+                } else {
+                    yield map.get(keys.get(1)) == 2 ? TWO_PAIR : ONE_PAIR;
+                }
+            }
+
             default -> HIGH_CARD;
         };
     }
@@ -149,5 +198,4 @@ class PokerHandTwoComparator implements Comparator<PokerHandTwo> {
         }
         return 0;
     }
-
 }

@@ -29,22 +29,14 @@ public class DAY_10_1 {
         for (int i = 0; i < input.length; i++) {
             char[] line = input[i].toCharArray();
             for (int j = 0; j < line.length; j++) {
-                //System.out.printf(line[j] + "");
                 if (line[j] == 'S') {
                     starX = j;
                     startY = i;
                 }
                 pipeWorld[i][j] = line[j];
             }
-            System.out.println();
         }
 
-        for (int i = 0; i < pipeWorld.length; i++) {
-            for (int j = 0; j < pipeWorld[i].length; j++) {
-                System.out.printf(pipeWorld[i][j] + "");
-            }
-            System.out.println();
-        }
 
 
         Point previousPoint = new Point(starX, startY);
@@ -65,7 +57,7 @@ public class DAY_10_1 {
         } while (currentPipe != 'S');
 
         result = (result / 2) + (result % 2);
-        System.out.println("RESULT: " + result);
+        System.out.println("RESULT: " + result); // 6856
 
     }
 

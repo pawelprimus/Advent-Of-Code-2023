@@ -3,30 +3,33 @@ package DAY_11;
 import READER.FileReader;
 import READER.InputType;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class DAY_11_1 {
+public class DAY_11_2 {
 
     private static final String DAY = "11";
+    private static final int GALAXY_WEIGHT = 100 - 1;
+    private static final BigInteger GALAXY_WEIGHT_BG = BigInteger.valueOf(1000000 - 1);
+
 
     public static void main(String[] args) throws Exception {
 
         String[] input = FileReader.readFileAsString(DAY, InputType.NORMAL).split("[\\r\\n]+");
 
-        int result = 0;
+        BigInteger result = BigInteger.ZERO;
 
-        List<Line> lines = new ArrayList<>();
+        List<LineTwo> lines = new ArrayList<>();
         for (int i = 0; i < input.length; i++) {
             char[] line = input[i].toCharArray();
-            List<Point> pointList = new ArrayList<>();
+            List<PointTwo> pointList = new ArrayList<>();
             for (int j = 0; j < line.length; j++) {
-                pointList.add(new Point(j, input.length - i - 1, line[j]));
+                pointList.add(new PointTwo(j, input.length - i - 1, line[j]));
             }
-            lines.add(new Line(pointList));
+            lines.add(new LineTwo(pointList));
         }
 
         lines = lines.stream().collect(Collectors.toList());
@@ -38,14 +41,14 @@ public class DAY_11_1 {
                     .map(point -> point.getSymbol())
                     .anyMatch(x -> x == '#');
             if (!containsGalaxy) {
-                List<Point> newPoints = new ArrayList<>();
+                List<PointTwo> newPoints = new ArrayList<>();
                 int localY = lines.get(i).getPointList().get(0).getY();
                 System.out.println(localY);
                 for (int j = 0; j < lines.get(i).getPointList().size(); j++) {
-                    newPoints.add(new Point(j, localY, '.'));
+                    newPoints.add(new PointTwo(j, localY, '.', true));
                 }
-                lines.stream().filter(pl -> pl.getPointListY() <= localY).forEach(Line::moveOneByY);
-                lines.add(new Line(newPoints));
+                lines.stream().filter(pl -> pl.getPointListY() <= localY).forEach(LineTwo::moveOneByY);
+                lines.add(new LineTwo(newPoints));
             }
         }
 
@@ -59,24 +62,23 @@ public class DAY_11_1 {
         int xlength = lines.get(0).getPointListX();
         int galaxyCounter = 0;
         for (int i = 0; i < xlength + 1 + galaxyCounter; i++) {
-            List<Point> xPoints = new ArrayList<>();
+            List<PointTwo> xPoints = new ArrayList<>();
             for (int j = 0; j < yLength; j++) {
                 xPoints.add(lines.get(j).getPointByX(i));
             }
 
             boolean containsGalaxy = xPoints.stream()
-                    .map(Point::getSymbol)
+                    .map(PointTwo::getSymbol)
                     .anyMatch(x -> x == '#');
             System.out.println(containsGalaxy);
-            if(!containsGalaxy && !xPoints.isEmpty()){
+            if (!containsGalaxy && !xPoints.isEmpty()) {
                 int localX = xPoints.get(0).getX();
                 System.out.println(localX);
                 for (int j = 0; j < yLength; j++) {
-                    Line line =  lines.get(j);
-
+                    LineTwo line = lines.get(j);
 
                     line.moveOneByX(localX - 1);
-                    line.getPointList().add(new Point(localX , line.getPointListY(), '.'));
+                    line.getPointList().add(new PointTwo(localX, line.getPointListY(), '.', true));
                     line.sortByX();
 
                     //newPoints.add(new Point(localX, j, '.', true));
@@ -95,56 +97,87 @@ public class DAY_11_1 {
 
         printColored(lines);
 
-        List<Point> galaxyPoints = new ArrayList<>();
-        for (Line line : lines) {
-            for (Point point : line.getPointList()) {
+        List<PointTwo> galaxyPoints = new ArrayList<>();
+        for (LineTwo line : lines) {
+            for (PointTwo point : line.getPointList()) {
                 if (point.getSymbol() == '#') {
                     galaxyPoints.add(point);
                 }
             }
         }
-
+        long galaxies = 0;
         for (int i = 0; i < galaxyPoints.size(); i++) {
-            Point galaxy = galaxyPoints.get(i);
-            for (int j = i+1; j < galaxyPoints.size(); j++) {
-                result += calculateDistanceBetweenPointsWithHypot(galaxy, galaxyPoints.get(j));
+            PointTwo galaxy = galaxyPoints.get(i);
+            for (int j = i + 1; j < galaxyPoints.size(); j++) {
+
+                int biggerX = Math.max(galaxy.getX(), galaxyPoints.get(j).getX());
+                int smallerX = Math.min(galaxy.getX(), galaxyPoints.get(j).getX());
+                int smallerY = Math.min(galaxy.getY(), galaxyPoints.get(j).getY());
+                int biggerY = Math.max(galaxy.getY(), galaxyPoints.get(j).getY());
+
+                int additionalPoints = biggerX != smallerX && smallerY != biggerY ? 2 : 1;
+                List<PointTwo> points =  calculateDistanceBetweenPointsWith(galaxy, galaxyPoints.get(j), lines);
+                galaxies += points.stream().filter(PointTwo::isNew).count();
+                result = result.add(BigInteger.valueOf(points.size())).add(BigInteger.valueOf(additionalPoints));
             }
         }
 
-
-        System.out.println("RESULT: " + result); // 9550717
+        result = result.add(BigInteger.valueOf(galaxies).multiply(GALAXY_WEIGHT_BG)).subtract(BigInteger.valueOf(galaxies));
+        System.out.println("RESULT: " + result); // 648458253817
     }
 
-    private static void printColored(List<Line> lines) {
-        for(Line line : lines){
+    static List<PointTwo>  calculateDistanceBetweenPointsWith(
+            PointTwo one, PointTwo two, List<LineTwo> lines) {
+        int biggerX = Math.max(one.getX(), two.getX());
+        int smallerX = Math.min(one.getX(), two.getX());
+        int smallerY = Math.min(one.getY(), two.getY());
+        int biggerY = Math.max(one.getY(), two.getY());
+
+        List<PointTwo> xPoints = lines.stream()
+                .filter(l -> l.getPointListY() == one.getY())
+                .findAny().get()
+                .getPointList().stream()
+                .filter(p -> p.getX() > smallerX && p.getX() < biggerX)
+                .toList();
+
+        List<PointTwo> yPoints = lines.stream().map(LineTwo::getPointList)
+                .flatMap(List::stream)
+                .filter(p -> p.getX() == smallerX)
+                .filter(p -> p.getY() > smallerY && p.getY() < biggerY)
+                .toList();
+
+        List<PointTwo> allPoints = new ArrayList<>(xPoints);
+        allPoints.addAll(yPoints);
+
+        return allPoints;
+    }
+
+    private static void printColored(List<LineTwo> lines) {
+        for (LineTwo line : lines) {
             System.out.println(line.getGalaxyOrWeight());
         }
     }
 
-    private static void printCoordinates(List<Line> lines) {
-        for(Line line : lines){
+    private static void printCoordinates(List<LineTwo> lines) {
+        for (LineTwo line : lines) {
             System.out.println(line.getCoordinatesString());
         }
     }
 
-    static int calculateDistanceBetweenPointsWithHypot(
-            Point one, Point two) {
-          return Math.abs(one.getX() - two.getX()) + Math.abs(one.getY() - two.getY());
-    }
+
 }
 
 
+class LineTwo implements Comparable<LineTwo> {
+    private List<PointTwo> pointList;
 
-class Line implements Comparable<Line> {
-    private List<Point> pointList;
-
-    public Line(List<Point> pointList) {
+    public LineTwo(List<PointTwo> pointList) {
         this.pointList = pointList;
     }
 
     public String getSymbolsString() {
         StringBuilder sb = new StringBuilder();
-        for (Point point : pointList) {
+        for (PointTwo point : pointList) {
             sb.append(point.getSymbol());
         }
         return sb.toString();
@@ -152,7 +185,7 @@ class Line implements Comparable<Line> {
 
     public String getGalaxyOrWeight() {
         StringBuilder sb = new StringBuilder();
-        for (Point point : pointList) {
+        for (PointTwo point : pointList) {
             sb.append(point.getGalaxyIdOrWeight());
         }
         return sb.toString();
@@ -160,17 +193,17 @@ class Line implements Comparable<Line> {
 
     public String getCoordinatesString() {
         StringBuilder sb = new StringBuilder();
-        for (Point point : pointList) {
+        for (PointTwo point : pointList) {
             sb.append("(").append(point.getX()).append(",").append(point.getY()).append(")");
         }
         return sb.toString();
     }
 
-    public List<Point> getPointList() {
+    public List<PointTwo> getPointList() {
         return pointList;
     }
 
-    public Point getPointByX(int x) {
+    public PointTwo getPointByX(int x) {
         return pointList.stream().filter(i -> i.getX() == x).findFirst().get();
     }
 
@@ -183,27 +216,27 @@ class Line implements Comparable<Line> {
     }
 
     public void moveOneByX(int x) {
-        pointList.stream().filter(p -> p.getX() > x).forEach(Point::moveOneByX);
+        pointList.stream().filter(p -> p.getX() > x).forEach(PointTwo::moveOneByX);
     }
 
     public void moveOneByY() {
-        pointList.stream().forEach(Point::moveOneByY);
+        pointList.stream().forEach(PointTwo::moveOneByY);
     }
 
-    public void sortByX(){
-        pointList = pointList.stream().sorted(Comparator.comparing(Point::getX)).collect(Collectors.toList());
+    public void sortByX() {
+        pointList = pointList.stream().sorted(Comparator.comparing(PointTwo::getX)).collect(Collectors.toList());
     }
 
     @Override
-    public int compareTo(Line o) {
+    public int compareTo(LineTwo o) {
         if (this.getPointListY() == o.getPointListY()) {
             return 0;
         }
-        return this.getPointListY() > o.getPointListY() ? - 1 : 1;
+        return this.getPointListY() > o.getPointListY() ? -1 : 1;
     }
 }
 
-class Point {
+class PointTwo {
     public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_BLUE = "\u001B[34m";
     public static final String ANSI_GREEN = "\u001B[32m";
@@ -218,13 +251,29 @@ class Point {
     private final char symbol;
     private int weight;
     private final String printColor;
+    private boolean isNew;
 
-    public Point(int x, int y, char symbol) {
+    public PointTwo(int x, int y, char symbol) {
+        this.x = x;
+        this.y = y;
+        this.symbol = symbol;
+        weight = 1;
+        if (symbol == GALAXY_SYMBOL) {
+            galacticID = galacticCounter++;
+            printColor = ANSI_RED;
+        } else {
+            printColor = ANSI_BLUE;
+            galacticID = -1;
+        }
+    }
+
+    public PointTwo(int x, int y, char symbol, boolean isNew) {
         this.x = x;
         this.y = y;
         this.symbol = symbol;
         weight = 1;
         printColor = ANSI_GREEN;
+        this.isNew = isNew;
         if (symbol == GALAXY_SYMBOL) {
             galacticID = galacticCounter++;
         } else {
@@ -250,6 +299,10 @@ class Point {
 
     public char getSymbol() {
         return symbol;
+    }
+
+    public boolean isNew() {
+        return isNew;
     }
 
     public String getGalaxyIdOrWeight() {

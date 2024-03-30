@@ -15,7 +15,7 @@ public class DAY_11_1 {
 
     public static void main(String[] args) throws Exception {
 
-        String[] input = FileReader.readFileAsString(DAY, InputType.TEST).split("[\\r\\n]+");
+        String[] input = FileReader.readFileAsString(DAY, InputType.NORMAL).split("[\\r\\n]+");
 
         int result = 0;
         char[][] cosmos = new char[input[0].length()][input.length];
@@ -37,6 +37,11 @@ public class DAY_11_1 {
             System.out.println();
         }
 
+        lines = lines.stream().collect(Collectors.toList());
+        for(Line line : lines){
+            System.out.println(line.getGalaxyOrWeight());
+        }
+
         int yLength = lines.size();
         for (int i = 0; i < yLength; i++) {
             boolean containsGalaxy = lines.get(i).getPointList().stream()
@@ -45,6 +50,7 @@ public class DAY_11_1 {
             if (!containsGalaxy) {
                 List<Point> newPoints = new ArrayList<>();
                 int localY = lines.get(i).getPointList().get(0).getY();
+                System.out.println(localY);
                 for (int j = 0; j < lines.get(i).getPointList().size(); j++) {
                     newPoints.add(new Point(j, localY, '.', true));
                 }
@@ -55,12 +61,22 @@ public class DAY_11_1 {
             }
         }
 
+
         lines = lines.stream().sorted().collect(Collectors.toList());
+        for(Line line : lines){
+            System.out.println(line.getGalaxyOrWeight());
+        }
+
+        for(Line line : lines){
+            System.out.println(line.getCoordinatesString());
+        }
+
 
         yLength = lines.size();
         int xlength = lines.get(0).getPointListX();
-
-        for (int i = 0; i < xlength - 1; i++) {
+        System.out.println("XLENGTH: " + xlength);
+        int galaxyCounter = 0;
+        for (int i = 0; i < xlength + 1 + galaxyCounter; i++) {
             List<Point> xPoints = new ArrayList<>();
             for (int j = 0; j < yLength; j++) {
                 xPoints.add(lines.get(j).getPointByX(i));
@@ -69,18 +85,26 @@ public class DAY_11_1 {
             boolean containsGalaxy = xPoints.stream()
                     .map(Point::getSymbol)
                     .anyMatch(x -> x == '#');
-
+            System.out.println(containsGalaxy);
             if(!containsGalaxy && !xPoints.isEmpty()){
                 int localX = xPoints.get(0).getX();
                 System.out.println(localX);
                 for (int j = 0; j < yLength; j++) {
                     Line line =  lines.get(j);
-                    line.getPointList().add(new Point(localX -1, j, '.', true));
 
-                    line.moveOneByX(localX );
+
+                    line.moveOneByX(localX - 1);
+                    line.getPointList().add(new Point(localX , line.getPointListY(), '.', true));
+                    line.sortByX();
+
                     //newPoints.add(new Point(localX, j, '.', true));
                 }
-
+                lines = lines.stream().sorted().collect(Collectors.toList());
+                for(Line line : lines){
+                    System.out.println(line.getCoordinatesString());
+                }
+                i++;
+                galaxyCounter++;
                 System.out.println("AA");
             }
 
@@ -101,11 +125,38 @@ public class DAY_11_1 {
             System.out.println(line.getGalaxyOrWeight());
         }
 
+        List<Point> galaxyPoints = new ArrayList<>();
+        for (Line line : lines) {
+
+
+            for (Point point : line.getPointList()) {
+                if (point.getSymbol() == '#') {
+                    galaxyPoints.add(point);
+                }
+            }
+            System.out.println(line.getGalaxyOrWeight());
+        }
+
+        for (int i = 0; i < galaxyPoints.size(); i++) {
+            Point galaxy = galaxyPoints.get(i);
+            for (int j = i+1; j < galaxyPoints.size(); j++) {
+                result += calculateDistanceBetweenPointsWithHypot(galaxy, galaxyPoints.get(j));
+            }
+        }
+
+
         System.out.println("RESULT: " + result);
 
 
     }
+
+    static int calculateDistanceBetweenPointsWithHypot(
+            Point one, Point two) {
+          return Math.abs(one.getX() - two.getX()) + Math.abs(one.getY() - two.getY());
+    }
 }
+
+
 
 class Line implements Comparable<Line> {
     private List<Point> pointList;
@@ -143,6 +194,8 @@ class Line implements Comparable<Line> {
     }
 
     public Point getPointByX(int x) {
+        //System.out.println("X: " + x);
+        //pointList.forEach(System.out::println);
         return pointList.stream().filter(i -> i.getX() == x).findFirst().get();
     }
 
@@ -162,12 +215,16 @@ class Line implements Comparable<Line> {
         pointList.stream().forEach(Point::moveOneByY);
     }
 
+    public void sortByX(){
+        pointList = pointList.stream().sorted(Comparator.comparing(Point::getX)).collect(Collectors.toList());
+    }
+
     @Override
     public int compareTo(Line o) {
         if (this.getPointListY() == o.getPointListY()) {
             return 0;
         }
-        return this.getPointListY() > o.getPointListY() ? 1 : -1;
+        return this.getPointListY() > o.getPointListY() ? - 1 : 1;
     }
 }
 
@@ -236,9 +293,9 @@ class Point {
 
     public String getGalaxyIdOrWeight() {
         if (symbol == GALAXY_SYMBOL) {
-            return printColor + String.valueOf(galacticID) + printColor;
+            return printColor + String.valueOf(galacticID) + printColor + ANSI_RESET;
         } else {
-            return printColor + String.valueOf(weight) + printColor;
+            return printColor + String.valueOf(weight) + printColor + ANSI_RESET;
         }
     }
 

@@ -34,14 +34,29 @@ public class DAY_12_1 {
 
     private static int getNumberOfArrangements(String row) {
 
-        int possibleArrangaments = 0;
+        // Prepare input
         String[] split = row.split(" ");
         String line = OPERATIONAL + split[0] + OPERATIONAL;
         List<Integer> inputArrangements = lineTuNumbers(List.of(split[1].split(",")));
 
+        // get possible
+        List<MyNumber> myNumberList = getMyNumbers(inputArrangements, line);
+
+        // get list of list of damaged group
+        List<List<DamagedGroup>> damagedLists = getDamagedList(myNumberList);
+
+        // get cartesian product -> alle permutations when take one element from every list
+        List<List<DamagedGroup>> cartesianProduct = Lists.cartesianProduct(damagedLists);
+
+        // get all string permutations
+        HashSet<String> allPermutations = getAllPermutations(cartesianProduct, line.length(), inputArrangements);
+
+        return getPossibleArrangaments(allPermutations, line, inputArrangements);
+    }
+
+    private static List<MyNumber> getMyNumbers(List<Integer> inputArrangements, String line) {
         int firstPossibleIndex = 0;
         int lastPossibleIndex = getLastPossibleIndexAtStart(line.length() - 2, inputArrangements);
-
 
         List<MyNumber> myNumberList = new ArrayList<>();
         myNumberList.add(new MyNumber(inputArrangements.get(0), firstPossibleIndex, lastPossibleIndex));
@@ -57,11 +72,12 @@ public class DAY_12_1 {
 
             myNumberList.add(new MyNumber(inputArrangements.get(i), firstPossibleIndex, lastPossibleIndex));
         }
+        return myNumberList;
+    }
 
-        int permutations = 1;
+    private static List<List<DamagedGroup>> getDamagedList(List<MyNumber> myNumberList) {
 
         List<List<DamagedGroup>> damagedLists = new ArrayList<>();
-
         for (MyNumber myNumber : myNumberList) {
             List<DamagedGroup> damagedGroupList = new ArrayList<>();
             for (int num : myNumber.possibleIndexes()) {
@@ -69,17 +85,24 @@ public class DAY_12_1 {
             }
             damagedLists.add(damagedGroupList);
 
-            permutations *= myNumber.getPossiblePositions();
         }
 
-        List<List<DamagedGroup>> cartesianProduct = Lists.cartesianProduct(damagedLists);
+        return damagedLists;
+    }
 
+    private static HashSet<String> getAllPermutations(List<List<DamagedGroup>> cartesianProduct, int lineLength, List<Integer> inputArrangements) {
         HashSet<String> allPermutations = new HashSet<>();
         for (List<DamagedGroup> damagedGroupList : cartesianProduct) {
-            String productCartesian = generatePermutationFromCartesian(damagedGroupList, line.length());
-            allPermutations.add(productCartesian);
+            String productCartesian = generatePermutationFromCartesian(damagedGroupList, lineLength);
+            if (isCorrectWithNumbers(inputArrangements, productCartesian)) {
+                allPermutations.add(productCartesian);
+            }
         }
+        return allPermutations;
+    }
 
+    private static int getPossibleArrangaments(HashSet<String> allPermutations, String line, List<Integer> inputArrangements) {
+        int possibleArrangaments = 0;
         for (String permutation : allPermutations) {
             if (isCorrect(permutation, line, inputArrangements)) {
                 possibleArrangaments++;
@@ -88,9 +111,10 @@ public class DAY_12_1 {
         return possibleArrangaments;
     }
 
+
     private static boolean isCorrect(String permutation, String line, List<Integer> inputArrangements) {
         if (isCorrectWithNumbers(inputArrangements, permutation)) {
-            if (isCorrectWIthInput(line, permutation, inputArrangements)) {
+            if (isCorrectWithInput(line, permutation, inputArrangements)) {
                 return true;
             }
         }
@@ -98,37 +122,42 @@ public class DAY_12_1 {
     }
 
 
-    private static boolean isCorrectWIthInput(String line, String permutation, List<Integer> numbers) {
+    private static boolean isCorrectWithInput(String line, String permutation, List<Integer> numbers) {
         char[] lineChars = line.toCharArray();
-        char[] consChars = permutation.toCharArray();
+        char[] permChars = permutation.toCharArray();
 
         for (int i = 0; i < lineChars.length; i++) {
             char lineChar = lineChars[i];
-            char consChar = consChars[i];
+            char permChar = permChars[i];
 
-            if (consChar == '#' && lineChar == '.') {
+            if (permChar == DAMAGED && lineChar == OPERATIONAL) {
                 return false;
             }
 
-            if (consChar == '#' && (lineChar == '#' || lineChar == '?')) {
-                lineChars[i] = '#';
+            if (permChar == DAMAGED && (lineChar == DAMAGED || lineChar == UNKNOWN)) {
+                lineChars[i] = DAMAGED;
             }
         }
-        String finalCons = String.valueOf(lineChars).replaceAll("\\?", ".");
-        if (isCorrectWithNumbers(numbers, finalCons)) {
-            return true;
-        }
-        return false;
+        String finalCons = String.valueOf(lineChars).replaceAll("\\?", OPERATIONAL_STR);
+
+        return isCorrectWithNumbers(numbers, finalCons);
     }
 
     private static boolean isCorrectWithNumbers(List<Integer> numbers, String permutation) {
-        int damagedAmount = 0;
+        List<Integer> damagedCounts = getDamagedCounts(permutation);
+
+        return numbers.equals(damagedCounts);
+    }
+
+    private static List<Integer> getDamagedCounts(String permutation) {
         char[] charArrays = permutation.toCharArray();
+        int damagedAmount = 0;
+
         List<Integer> damagedCounts = new ArrayList<>();
         for (int i = 0; i < charArrays.length; i++) {
             char loopChar = charArrays[i];
-            if (loopChar == '#') {
-                while (loopChar == '#') {
+            if (loopChar == DAMAGED) {
+                while (loopChar == DAMAGED) {
                     damagedAmount++;
                     i++;
                     loopChar = charArrays[i];
@@ -137,24 +166,15 @@ public class DAY_12_1 {
                 damagedAmount = 0;
             }
         }
-
-        if (numbers.size() != damagedCounts.size()) {
-            return false;
-        }
-        for (int i = 0; i < numbers.size(); i++) {
-            if (numbers.get(i) != damagedCounts.get(i)) {
-                return false;
-            }
-        }
-        return true;
+        return damagedCounts;
     }
 
 
     static String generatePermutationFromCartesian(List<DamagedGroup> damagedGroups, int size) {
-        StringBuilder sb = new StringBuilder(".".repeat(size));
+        StringBuilder sb = new StringBuilder(OPERATIONAL_STR.repeat(size));
 
         for (DamagedGroup damagedGroup : damagedGroups) {
-            sb.replace(damagedGroup.getStartIndex() + 1, damagedGroup.getEndIndex() + 1, "#".repeat(damagedGroup.getAmountOfDamaged()));
+            sb.replace(damagedGroup.getStartIndex() + 1, damagedGroup.getEndIndex() + 1, DAMAGED_STR.repeat(damagedGroup.getAmountOfDamaged()));
         }
 
         return sb.toString();
@@ -192,10 +212,6 @@ class MyNumber {
     public MyNumber(int number, int firstPossibleIndex, int lastPossibleIndex) {
         this.number = number;
         this.possibleIndexes.addAll(IntStream.rangeClosed(firstPossibleIndex, lastPossibleIndex).boxed().toList());
-    }
-
-    int getPossiblePositions() {
-        return possibleIndexes.size();
     }
 
     List<Integer> possibleIndexes() {

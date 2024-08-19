@@ -61,7 +61,6 @@ class Point {
     public void printSign() {
         if (isVisited) {
             System.out.print(ANSI_YELLOW + "[" + sign + "]" + ANSI_RESET);
-
         } else {
             System.out.print("[" + sign + "]");
         }

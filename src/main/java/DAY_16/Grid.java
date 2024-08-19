@@ -1,94 +1,75 @@
 package DAY_16;
 
-import READER.FileReader;
-import READER.InputType;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static DAY_16.Direction.*;
 
-public class DAY_16_1 {
+class Grid {
+    private final Point[][] grid;
+    private final int MAX_X;
+    private final int MAX_Y;
+    private final List<Light> lights = new ArrayList<>();
+    private final Set<Light> lightsToRemove = new HashSet<>();
+    private final Set<Light> lightsToAdd = new HashSet<>();
+    private int visited = 0;
 
-    private static final String DAY = "16";
-    static Point[][] grid;
-    static int MAX_X;
-    static int MAX_Y;
-    static List<Light> lights = new ArrayList<>();
-    static Set<Light> lightsToRemove = new HashSet<>();
-    static Set<Light> lightsToAdd = new HashSet<>();
-    static int visited = 0;
+    public Grid(Point[][] grid) {
+        this.grid = grid;
+        this.MAX_X = grid[0].length;
+        this.MAX_Y = grid.length;
+    }
 
-    public static void main(String[] args) throws Exception {
+    public int getVisited(Light inputLight) {
+        reset();
 
-        String[] input = FileReader.readFileAsString(DAY, InputType.NORMAL).split("[\\r\\n]+");
+        lights.add(inputLight);
 
-        grid = new Point[input.length][input[0].length()];
+        while (true) {
 
-        MAX_X = input[0].length();
-        MAX_Y = input.length;
-
-        for (int i = 0; i < MAX_Y; i++) {
-            char[] chars = input[i].toCharArray();
-            for (int j = 0; j < chars.length; j++) {
-                char c = chars[j];
-                Point point = new Point(j, MAX_Y - i - 1, c);
-                grid[input.length - i - 1][j] = point;
-            }
-        }
-
-
-        Light initLight = new Light(getPointByCords(0, MAX_Y - 1), EAST);
-        lights.add(initLight);
-        printSigns();
-
-        System.out.println("-------");
-        for (int i = 0; i < 5000; i++) {
-            System.out.println("[" + i + "]" + " - " + visited);
             for (Light light : lights) {
                 makeMove(light);
             }
-            //System.out.println("BEFORE REMOVE" + lights.size());
             for (Light light : lightsToRemove) {
                 lights.remove(light);
             }
-            //System.out.println("AFTER REMOVE" + lights.size());
-            //System.out.println();
-            boolean add = true;
+
+            if (lights.isEmpty()) {
+                break;
+            }
+
+            boolean shouldAddLight = true;
             for (Light lightToAdd : lightsToAdd) {
                 for (Light light : lights) {
                     if (lightToAdd.equals(light)) {
-                        add = false;
+                        shouldAddLight = false;
                         break;
                     }
                 }
-                if (add) {
+                if (shouldAddLight) {
                     lights.add(lightToAdd);
                 }
-                add = true;
+                shouldAddLight = true;
             }
-
-//            for (Light light : lights) {
-//                System.out.println(light);
-//            }
-
-            //System.out.println(lights.size());
-            //printSigns();
-            //System.out.println();
         }
 
-        System.out.println("RESULT: " + visited); // 46 -  7884
+        return visited;
     }
 
 
-    public static void makeMove(Light light) {
+    private void makeMove(Light light) {
 
         char currentSign = light.getCurrentSign();
         if (!light.getCurrentPoint().isVisited()) {
+            light.getCurrentPoint().setVisited();
             visited++;
         }
-        light.getCurrentPoint().setVisited();
+
         Direction currentDirection = light.getDirection();
         if (light.getCurrentPoint().isVisitedByDirection(light.getDirection())) {
+            lightsToRemove.add(light);
             return;
         }
         light.getCurrentPoint().addVisited(light.getDirection());
@@ -101,6 +82,7 @@ public class DAY_16_1 {
                 case SOUTH -> moveSouth(light);
                 case WEST -> moveWest(light);
             }
+            return;
         }
 
         // |
@@ -109,8 +91,9 @@ public class DAY_16_1 {
                 case NORTH -> moveNorth(light);
                 case EAST, WEST -> splitLightVertical(light);
                 case SOUTH -> moveSouth(light);
-
             }
+            return;
+
         }
         // _
         if (currentSign == '-') {
@@ -119,6 +102,8 @@ public class DAY_16_1 {
                 case EAST -> moveEast(light);
                 case WEST -> moveWest(light);
             }
+            return;
+
         }
 
         // \
@@ -130,7 +115,7 @@ public class DAY_16_1 {
                 case SOUTH -> moveEast(light);
                 case WEST -> moveNorth(light);
             }
-
+            return;
         }
         // /
         if (currentSign == '/') {
@@ -144,33 +129,29 @@ public class DAY_16_1 {
 
     }
 
-    private static void splitLightVertical(Light light) {
+    private void splitLightVertical(Light light) {
+        // make new and move south
         Point point = getPointByCords(light.getX(), light.getY());
         Light newLight = new Light(point, SOUTH);
+        moveSouth(newLight);
+        lightsToAdd.add(newLight);
 
-        if (!isOnSouthEdge(newLight)) {
-            moveSouth(newLight);
-            lightsToAdd.add(newLight);
-        }
-
+        // move current light to north
         moveNorth(light);
     }
 
-    private static void splitLightHorizontal(Light light) {
+    private void splitLightHorizontal(Light light) {
         // make new and move West
         Point point = getPointByCords(light.getX(), light.getY());
         Light newLight = new Light(point, SOUTH);
-
-        if (!isOnWestEdge(newLight)) {
-            moveWest(newLight);
-            lightsToAdd.add(newLight);
-        }
+        moveWest(newLight);
+        lightsToAdd.add(newLight);
 
         // move East
         moveEast(light);
     }
 
-    public static void moveNorth(Light light) {
+    private void moveNorth(Light light) {
         if (isOnNorthEdge(light)) {
             killLight(light);
         } else {
@@ -180,64 +161,58 @@ public class DAY_16_1 {
         }
     }
 
-    public static void moveEast(Light light) {
+    private void moveEast(Light light) {
         if (isOnEastEdge(light)) {
             killLight(light);
         } else {
             Point point = getPointByCords(light.getX() + 1, light.getY());
-
             light.changePoint(point);
             light.setDirection(EAST);
         }
     }
 
-    public static void moveSouth(Light light) {
+    private void moveSouth(Light light) {
         if (isOnSouthEdge(light)) {
             killLight(light);
         } else {
-
             Point point = getPointByCords(light.getX(), light.getY() - 1);
-
             light.changePoint(point);
             light.setDirection(SOUTH);
-
         }
     }
 
-    public static void moveWest(Light light) {
+    private void moveWest(Light light) {
         if (isOnWestEdge(light)) {
             killLight(light);
         } else {
             Point point = getPointByCords(light.getX() - 1, light.getY());
-
             light.changePoint(point);
             light.setDirection(WEST);
-
         }
     }
 
-    public static void killLight(Light light) {
+    private void killLight(Light light) {
         lightsToRemove.add(light);
     }
 
-    public static boolean isOnNorthEdge(Light light) {
+    private boolean isOnNorthEdge(Light light) {
         return light.getY() == MAX_Y - 1;
     }
 
-    public static boolean isOnEastEdge(Light light) {
+    private boolean isOnEastEdge(Light light) {
         return light.getX() == MAX_X - 1;
     }
 
-    public static boolean isOnSouthEdge(Light light) {
+    private boolean isOnSouthEdge(Light light) {
         return light.getY() == 0;
     }
 
-    public static boolean isOnWestEdge(Light light) {
+    private boolean isOnWestEdge(Light light) {
         return light.getX() == 0;
     }
 
 
-    public static void printCords() {
+    public void printCords() {
         for (int i = grid.length - 1; i >= 0; i--) {
             for (int j = 0; j < grid[i].length; j++) {
                 getPointByCords(j, i).printCords();
@@ -246,7 +221,7 @@ public class DAY_16_1 {
         }
     }
 
-    public static void printSigns() {
+    public void printSigns() {
         for (int i = grid.length - 1; i >= 0; i--) {
             for (int j = 0; j < grid[i].length; j++) {
                 getPointByCords(j, i).printSign();
@@ -255,7 +230,19 @@ public class DAY_16_1 {
         }
     }
 
-    public static Point getPointByCords(int x, int y) {
+    public void reset() {
+        for (int i = grid.length - 1; i >= 0; i--) {
+            for (int j = 0; j < grid[i].length; j++) {
+                getPointByCords(j, i).resetVisited();
+            }
+        }
+        lights.clear();
+        lightsToAdd.clear();
+        lightsToRemove.clear();
+        visited = 0;
+    }
+
+    public Point getPointByCords(int x, int y) {
         return grid[y][x];
     }
 

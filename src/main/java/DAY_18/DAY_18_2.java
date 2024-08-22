@@ -34,8 +34,10 @@ public class DAY_18_2 {
             points.add(new PointTwo(points.get(i - 1), loopInstruction));
             amountOfCircut = amountOfCircut.add(BigInteger.valueOf(loopInstruction.getValue()));
         }
+        amountOfCircut = amountOfCircut.add(BigInteger.TWO);
 
         BigInteger insidePolygonField = BigInteger.ZERO;
+        // https://www.themathdoctors.org/polygon-coordinates-and-areas/
         for (int i = 1; i < points.size(); i++) {
             PointTwo pointOne = points.get(i - 1);
             PointTwo pointTwo = points.get(i);
@@ -43,9 +45,8 @@ public class DAY_18_2 {
         }
 
         BigInteger polygonRes = insidePolygonField.abs().add(amountOfCircut);
-        BigInteger finalResult = polygonRes.subtract(BigInteger.valueOf(2));
+        BigInteger finalResult = polygonRes.divide(BigInteger.valueOf(2));
 
-        // 137096602074760 / 2 + 1 = 68548301037382 somehow subtract does not works
         System.out.println("RESULT: " + finalResult); // 952408144115 //   68548301037382
     }
 

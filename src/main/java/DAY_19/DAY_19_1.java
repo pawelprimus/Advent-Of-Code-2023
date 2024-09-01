@@ -14,25 +14,64 @@ public class DAY_19_1 {
 
     public static void main(String[] args) throws Exception {
 
-        String[] input = FileReader.readFileAsString(DAY, InputType.TEST).split("(?m)^\\s*$");
+        String[] input = FileReader.readFileAsString(DAY, InputType.NORMAL).split("(?m)^\\s*$");
 
         String[] partsString = input[1].split("[\\n]");
         String[] workflowsString = input[0].split("[\\n]");
 
+        int finalResult = 0;
+
+
+        // Create parts from strings
+        List<Parts> partsList = new ArrayList<>();
         for (String parts : partsString) {
-            //Parts parts1 = new Parts(parts);
+            if (parts.length() > 1) {
+                Parts parts1 = new Parts(parts);
+                partsList.add(parts1);
+            }
         }
 
+        // Create workflows from string
+        List<Workflows> workflowsList = new ArrayList<>();
         for (String workflow : workflowsString) {
-            //System.out.println(workflow);
             Workflows workflows = new Workflows(workflow);
-            workflows.print();
+            workflowsList.add(workflows);
         }
+
+        // find "in" workflows
+        Workflows inWorkflow = findWorkflowByID(workflowsList, "in");
+
+        for (Parts parts : partsList) {
+            int loopResult = getWorkflowsResult(inWorkflow, workflowsList, parts);
+            finalResult += loopResult;
+            System.out.println(loopResult);
+        }
+
+        System.out.println("RESULT: " + finalResult); // 333263
+    }
+
+    public static int getWorkflowsResult(Workflows inWorkflow, List<Workflows> workflowsList, Parts parts) {
 
         String result = "";
+        while (true) {
+            result = inWorkflow.evaluate(parts);
 
+            if (result.equals("A") || result.equals("R")) {
+                break;
+            }
+            inWorkflow = findWorkflowByID(workflowsList, result);
+        }
 
-        System.out.println("RESULT: " + result);
+        return result.equals("A") ? parts.getAllPartsValue() : 0;
+    }
+
+    public static Workflows findWorkflowByID(List<Workflows> workflows, String ID) {
+        for (Workflows workflow : workflows) {
+            if (workflow.getID().equals(ID)) {
+                return workflow;
+            }
+        }
+        return null;
     }
 }
 
@@ -61,9 +100,34 @@ class Workflows {
         }
     }
 
-    public void print(){
+    public String evaluate(Parts parts) {
+        String result;
+        for (Condition condition : conditions) {
+
+            result = condition.evalute(parts);
+            if (result.equals("A") || result.equals("R")) {
+                return result;
+            }
+            if (result.length() > 1) {
+                return result;
+            }
+
+        }
+
+        return ":(";
+    }
+
+    public String getID() {
+        return ID;
+    }
+
+    public List<Condition> getConditions() {
+        return conditions;
+    }
+
+    public void print() {
         System.out.println("ID " + ID);
-        for (Condition condition : conditions){
+        for (Condition condition : conditions) {
             System.out.println(condition.toString());
         }
     }
@@ -72,14 +136,14 @@ class Workflows {
 class Condition {
 
     String valueCheck;
-    String comparisionOperator;
+    String comparisonOperator;
     int valueToBeCompared;
     String comparisonTrue;
     String comparisonFalse;
 
     public Condition(String valueCheck, String comparisionOperator, String rest) {
         this.valueCheck = valueCheck;
-        this.comparisionOperator = comparisionOperator;
+        this.comparisonOperator = comparisionOperator;
 
         // 1548:A,A
         String[] restSplitedToNumberAndComparisionGoTo = rest.split(":");
@@ -91,12 +155,25 @@ class Condition {
         comparisonFalse = comparisionResult[1];
     }
 
+    public String evalute(Parts parts) {
+        int leftSideCondition = parts.getValue(valueCheck.charAt(0));
+        // true = means left parts win, false right part win
+        boolean result;
+        if (comparisonOperator.equals(">")) {
+            result = leftSideCondition > valueToBeCompared;
+        } else {
+            result = leftSideCondition < valueToBeCompared;
+        }
+
+        return result ? comparisonTrue : comparisonFalse;
+    }
+
     public String getValueCheck() {
         return valueCheck;
     }
 
-    public String getComparisionOperator() {
-        return comparisionOperator;
+    public String getComparisonOperator() {
+        return comparisonOperator;
     }
 
     public int getValueToBeCompared() {
@@ -113,7 +190,7 @@ class Condition {
 
     @Override
     public String toString() {
-        return valueCheck + " " + comparisionOperator + " " + valueToBeCompared + " ? " + comparisonTrue + " : " + comparisonFalse;
+        return valueCheck + " " + comparisonOperator + " " + valueToBeCompared + " ? " + comparisonTrue + " : " + comparisonFalse;
     }
 }
 
@@ -148,8 +225,26 @@ class Parts {
         if (matcher.find()) {
             this.s = Integer.parseInt(matcher.group());
         }
-        System.out.println(matcher.group(0));
+        //System.out.println(matcher.group(0));
+    }
 
+    public int getAllPartsValue() {
+        return x + m + a + s;
+    }
+
+    public int getValue(char value) {
+        switch (value) {
+            case 'x':
+                return x;
+            case 'm':
+                return m;
+            case 'a':
+                return a;
+            case 's':
+                return s;
+            default:
+                return Integer.MIN_VALUE;
+        }
     }
 
 

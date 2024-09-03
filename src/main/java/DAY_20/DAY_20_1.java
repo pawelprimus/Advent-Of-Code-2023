@@ -43,7 +43,10 @@ public class DAY_20_1 {
         }
         System.out.println("---");
 
-        for (int i = 0; i < 1000; i++) {
+        Conjuction zh = (Conjuction) findModuleByID(modules, "xc");
+
+        for (int i = 0; i < 5000; i++) {
+            System.out.println(i + 1);
             while (operationModules.size() > 0) {
                 List<Module> copyList = new ArrayList<>();
 
@@ -54,6 +57,8 @@ public class DAY_20_1 {
 
                 operationModules = copyList;
             }
+
+
             operationModules.add(broadcaster);
         }
 
@@ -68,10 +73,9 @@ public class DAY_20_1 {
 
 
         System.out.println("RESULT: " + allNegative * allPositive); // 886701120
+        // 228134431501037 = PART 2
 
 
-        // APRT 2 3823 - too low
-        // 2147483647 - too low
     }
 
     public static void attachIdsToModules(Module module, List<Module> modules) {
@@ -337,6 +341,20 @@ class Conjuction implements Module {
             increasePulsesValues(valueToSend);
             if (module != null) {
                 //System.out.println(id + " -" + (valueToSend ? "high" : "low") + "-> " + module.getId());
+
+                if (valueToSend) {
+                    switch (this.id) {
+                        case "xc":
+                            System.out.println("xc send HIGH to " + module.getId());
+                        case "th":
+                            System.out.println("th send HIGH to " + module.getId());
+                        case "pd":
+                            System.out.println("pd send HIGH to " + module.getId());
+                        case "bp":
+                            System.out.println("bp send HIGH to " + module.getId());
+                    }
+                }
+
                 if (module instanceof Conjuction) {
                     modules.add(((Conjuction) module).receivePulse(valueToSend, id));
                 } else {
@@ -366,8 +384,15 @@ class Conjuction implements Module {
     public void changePulseForGivenId(boolean pulseValue, String id) {
         for (ReceivedSignal receivedSignal : receivedSignals) {
             if (receivedSignal.getId().equals(id)) {
+                System.out.println(this.id + " | " + id + " " + receivedSignal.isSignalValue() + " -> " + pulseValue);
                 receivedSignal.setSignalValue(pulseValue);
             }
+        }
+    }
+
+    public void printInputSignals() {
+        for (ReceivedSignal receivedSignal : receivedSignals) {
+            System.out.println(receivedSignal.getId() + " " + receivedSignal.isSignalValue());
         }
     }
 

@@ -45,15 +45,18 @@ public class DAY_21_1 {
 
         Grid gridObj = new Grid(grid);
         gridObj.makeMove(327 );
+
+
+        System.out.println("RESULT: " + gridObj.countMarkedPoints()); // PART 1 - 3847
+
+
+        // PART 2
         // 65 - 3957
         // 196 - 35223
         // 327  - 97645
-        // 637537341306357
+        // https://www.dcode.fr/lagrange-interpolating-polynomial
+        // RESULT= 637537341306357
         //gridObj.printSigns();
-
-        System.out.println("RESULT: " + gridObj.countMarkedPoints()); // 3847
-
-
     }
 
 

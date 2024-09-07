@@ -6,6 +6,8 @@ import READER.InputType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class DAY_22_2 {
@@ -13,6 +15,7 @@ public class DAY_22_2 {
     private static final String DAY = "22";
 
     public static void main(String[] args) throws Exception {
+        long startTime = System.nanoTime();
 
         String[] input = FileReader.readFileAsString(DAY, InputType.NORMAL).split("[\\r\\n]+");
 
@@ -20,11 +23,6 @@ public class DAY_22_2 {
         for (int i = 0; i < input.length; i++) {
             allBricks.add(createBrick(input[i], i + 65));
         }
-
-//        for (Brick brick : allBricks) {
-//            brick.print();
-//            System.out.println(brick.xPoints().stream().map(String::valueOf).collect(Collectors.joining(", ")));
-//        }
 
         boolean isAnythingChanged = true;
         while (isAnythingChanged) {
@@ -40,57 +38,42 @@ public class DAY_22_2 {
             brick.attachConnectedBricks(allBricks);
         }
         int result = 0;
-//        for (BrickTwo brick : allBricks) {
-//            if (brick.canBeRemoved()) {
-//                //result++;
-//            }
-//        }
 
-        BrickTwo ABrick = allBricks.get(0);
-        System.out.println();
-        ABrick.print();
         List<BrickTwo> bricksToRemove = new ArrayList<>();
-        //bricksToRemove.add(ABrick);
-
-        for (BrickTwo brick : allBricks) {
-            brick.restoreCopyDownConnectedBricks();
-        }
+        List<BrickTwo> bricksToRemoveCopy = new ArrayList<>();
 
         for (BrickTwo brickTwo : allBricks) {
-            System.out.println("CHECKING BRICK " + brickTwo.getCharId());
+            for (BrickTwo restoreBrick : allBricks) {
+                restoreBrick.restoreCopyDownConnectedBricks();
+            }
             bricksToRemove.add(brickTwo);
 
-            while (bricksToRemove.size() > 0) {
+            while (!bricksToRemove.isEmpty()) {
+
                 for (BrickTwo brickToRemove : bricksToRemove) {
-                    for (BrickTwo brick : allBricks) {
+                    List<BrickTwo> upConnectedBricks = brickToRemove.getUpConnectedBricks();
+                    for (BrickTwo brick : upConnectedBricks) {
                         brick.removeDownConnectedBrick(brickToRemove);
-                    }
-                    brickToRemove.removeSoftly();
-                }
-
-
-                //allBricks.removeAll(bricksToRemove);
-                bricksToRemove.clear();
-                for (BrickTwo checkBrick : allBricks) {
-                    if (!checkBrick.isSoftRemoved()) {
-                        if (checkBrick.willFall()) {
+                        if (brick.willFall()) {
                             result++;
-                            bricksToRemove.add(checkBrick);
-                            System.out.println("BRICK IS FALLING -> " + checkBrick.getCharId());
+                            bricksToRemoveCopy.add(brick);
                         }
                     }
-
                 }
+                bricksToRemove.clear();
+                bricksToRemove.addAll(bricksToRemoveCopy);
+                bricksToRemoveCopy.clear();
             }
 
-
-            for (BrickTwo brick : allBricks) {
-                brick.restoreCopyDownConnectedBricks();
-            }
-            System.out.println("FINISHED CHECKING BRICK " + brickTwo.getCharId());
         }
 
         System.out.println("RESULT " + result); // 95059
+
+        long endTime = System.nanoTime();
+        long totalTime = endTime - startTime;
+        long millis = TimeUnit.NANOSECONDS.toMillis(totalTime);
+        long seconds = TimeUnit.NANOSECONDS.toSeconds(totalTime);
+        System.out.println("SECONDS[" + seconds + "] MILIS[" + millis + "] NANOS [" + totalTime + "]");
     }
 
     // 1,0,1~1,2,1
@@ -108,19 +91,18 @@ public class DAY_22_2 {
 class BrickTwo {
     private final int id;
     private final char charId;
-    private int xStart;
-    private int xEnd;
-    private int yStart;
-    private int yEnd;
+    private final int xStart;
+    private final int xEnd;
+    private final int yStart;
+    private final int yEnd;
     private int zStart;
     private int zEnd;
-    private boolean isSoftRemoved = false;
     // Bricks that are connected above this brick
-    private List<BrickTwo> upConnectedBricks = new ArrayList<>();
+    private final List<BrickTwo> upConnectedBricks = new ArrayList<>();
     // Bricks that are connected under this brick
-    private List<BrickTwo> downConnectedBricks = new ArrayList<>();
+    private final List<BrickTwo> downConnectedBricks = new ArrayList<>();
 
-    private List<BrickTwo> copyDownConnectedBricks = new ArrayList<>();
+    private final List<BrickTwo> copyDownConnectedBricks = new ArrayList<>();
 
     public BrickTwo(int xStart, int xEnd, int yStart, int yEnd, int zStart, int zEnd, int id) {
         this.xStart = xStart;
@@ -133,6 +115,19 @@ class BrickTwo {
         this.charId = (char) id;
     }
 
+    public void attachConnectedBricks(List<BrickTwo> bricks) {
+        for (BrickTwo brick : bricks) {
+            // check if is brick lower by on Z axis
+            if (isBrickLevelHigher(brick)) {
+                // check if brick has any interfere in X or Y axis
+                if (isBrickInterfereXorYaxis(brick)) {
+                    addUpConnectedBrick(brick);
+                    brick.addDownConnectedBrick(this);
+                }
+            }
+        }
+    }
+
     public boolean canBeRemoved() {
         for (BrickTwo supportedBrick : upConnectedBricks) {
             if (supportedBrick.hasLessThan2Supporters()) {
@@ -142,23 +137,20 @@ class BrickTwo {
         return true;
     }
 
-    public boolean isSoftRemoved() {
-        return isSoftRemoved;
+
+    public List<BrickTwo> getUpConnectedBricks() {
+        return upConnectedBricks;
     }
 
-    public void removeSoftly() {
-        isSoftRemoved = true;
+    public List<BrickTwo> getDownConnectedBricks() {
+        return downConnectedBricks;
     }
 
     public boolean willFall() {
-        if(this.zStart == 1) {
+        if (this.zStart == 1) {
             return false;
         }
         return copyDownConnectedBricks.isEmpty();
-    }
-
-    private boolean hasLessThan2Supporters() {
-        return downConnectedBricks.size() < 2;
     }
 
     public boolean moveBrickIfPossible(List<BrickTwo> bricks) {
@@ -169,7 +161,12 @@ class BrickTwo {
         return false;
     }
 
-    public boolean canMoveLower(List<BrickTwo> bricks) {
+    private boolean hasLessThan2Supporters() {
+        return downConnectedBricks.size() < 2;
+    }
+
+
+    private boolean canMoveLower(List<BrickTwo> bricks) {
         if (getzStart() == 1) {
             return false;
         }
@@ -187,18 +184,6 @@ class BrickTwo {
         this.zEnd--;
     }
 
-    public void attachConnectedBricks(List<BrickTwo> bricks) {
-        for (BrickTwo brick : bricks) {
-            // check if is brick lower by on Z axis
-            if (isBrickLevelHigher(brick)) {
-                // check if brick has any interfere in X or Y axis
-                if (isBrickInterfereXorYaxis(brick)) {
-                    addUpConnectedBrick(brick);
-                    brick.addDownConnectedBrick(this);
-                }
-            }
-        }
-    }
 
     private boolean isBrickLevelHigher(BrickTwo brick) {
         return getzEnd() - brick.getzStart() == -1;
@@ -245,14 +230,11 @@ class BrickTwo {
     }
 
     public void removeDownConnectedBrick(BrickTwo brick) {
-        if (copyDownConnectedBricks.contains(brick)) {
             //System.out.println(this.getCharId() + " REMOVING " + brick.getCharId());
             copyDownConnectedBricks.remove(brick);
-        }
     }
 
     public void restoreCopyDownConnectedBricks() {
-        isSoftRemoved = false;
         for (BrickTwo brickTwo : downConnectedBricks) {
             if (!copyDownConnectedBricks.contains(brickTwo)) {
                 copyDownConnectedBricks.add(brickTwo);
@@ -302,5 +284,18 @@ class BrickTwo {
 
     public char getCharId() {
         return charId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BrickTwo brickTwo = (BrickTwo) o;
+        return id == brickTwo.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

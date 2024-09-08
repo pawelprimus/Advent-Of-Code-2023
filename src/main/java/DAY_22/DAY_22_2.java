@@ -69,6 +69,10 @@ public class DAY_22_2 {
 
         System.out.println("RESULT " + result); // 95059
 
+        printEndTime(startTime);
+    }
+
+    private static void printEndTime(long startTime) {
         long endTime = System.nanoTime();
         long totalTime = endTime - startTime;
         long millis = TimeUnit.NANOSECONDS.toMillis(totalTime);
@@ -230,8 +234,8 @@ class BrickTwo {
     }
 
     public void removeDownConnectedBrick(BrickTwo brick) {
-            //System.out.println(this.getCharId() + " REMOVING " + brick.getCharId());
-            copyDownConnectedBricks.remove(brick);
+        //System.out.println(this.getCharId() + " REMOVING " + brick.getCharId());
+        copyDownConnectedBricks.remove(brick);
     }
 
     public void restoreCopyDownConnectedBricks() {

@@ -6,6 +6,7 @@ import READER.InputType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class DAY_23_1 {
 
@@ -17,16 +18,15 @@ public class DAY_23_1 {
 
 
     public static void main(String[] args) throws Exception {
+        long startTime = System.nanoTime();
 
         String[] input = FileReader.readFileAsString(DAY, InputType.NORMAL).split("[\\r\\n]+");
-        String result = "";
 
         grid = new Point[input.length][input[0].length()];
 
         MAX_X = input[0].length();
         MAX_Y = input.length;
 
-        Point startPoint;
         for (int i = 0; i < MAX_Y; i++) {
             char[] chars = input[i].toCharArray();
             for (int j = 0; j < chars.length; j++) {
@@ -38,17 +38,23 @@ public class DAY_23_1 {
 
         Grid gridObj = new Grid(grid);
 
-        gridObj.printSigns();
+        // gridObj.printSigns();
 
-        gridObj.attachAllNodes();
+        gridObj.findLongestPath();
         System.out.println("--------");
-        gridObj.makeBranches();
 
-        gridObj.printSigns();
+        //gridObj.printSigns();
 
         System.out.println("RESULT: " + gridObj.getMaxBranch()); // 2074
+        printEndTime(startTime);
+    }
 
-
+    private static void printEndTime(long startTime) {
+        long endTime = System.nanoTime();
+        long totalTime = endTime - startTime;
+        long millis = TimeUnit.NANOSECONDS.toMillis(totalTime);
+        long seconds = TimeUnit.NANOSECONDS.toSeconds(totalTime);
+        System.out.println("SECONDS[" + seconds + "] MILIS[" + millis + "] NANOS [" + totalTime + "]");
     }
 }
 
@@ -59,75 +65,32 @@ class Grid {
 
     private Point firstPoint;
     private Point lastPoint;
-    private List<Point> nodePoints = new ArrayList<>();
+
     private int maxBranch = Integer.MIN_VALUE;
 
     public Grid(Point[][] grid) {
         this.grid = grid;
         this.MAX_X = grid[0].length - 1;
         this.MAX_Y = grid.length - 1;
-        //Point startPoint = findStartPoint();
+
         firstPoint = findFirstPoint();
         lastPoint = findLastPoint();
-
-        firstPoint.printCords();
-        lastPoint.printCords();
-        System.out.println();
-    }
-
-
-    public void attachAllNodes() {
-        setConnections(firstPoint);
-    }
-
-    public void makeBranches() {
-        List<Point> emptyPoints = new ArrayList<>();
-        makeBranch(firstPoint, emptyPoints);
-
-        //System.out.println(branch.size());
-
-    }
-
-    private void makeBranch(Point startPoint, List<Point> branch) {
-
-        Point currentPoint = startPoint;
-        while (currentPoint.hasNextPoint()) {
-
-            if (currentPoint.isDecision()) {
-                branch.add(currentPoint);
-
-                Point firstPoint = currentPoint.getFirstNextPoint();
-                Point secondPoint = currentPoint.getSeconsNextPoint();
-
-                List<Point> copyList = new ArrayList<>(branch);
-                makeBranch(secondPoint, copyList);
-
-                currentPoint = firstPoint;
-
-
-            } else {
-                branch.add(currentPoint);
-                currentPoint = currentPoint.getFirstNextPoint();
-            }
-        }
-
-        if(branch.size() > maxBranch){
-            maxBranch = branch.size();
-        }
-
-        System.out.println(branch.size());
-        //return branch;
     }
 
     public int getMaxBranch() {
         return maxBranch;
     }
 
-    private void setConnections(Point startPoint) {
+    public void findLongestPath() {
+        List<Point> emptyPoints = new ArrayList<>();
+
+        setConnections(firstPoint, emptyPoints);
+    }
+
+    private void setConnections(Point startPoint, List<Point> branch) {
         Point currentPoint = startPoint;
         int i = 0;
         while (shouldContinue(currentPoint)) {
-            addToNodes(currentPoint);
             i++;
             currentPoint.setNooded();
 
@@ -143,9 +106,14 @@ class Grid {
                 Point nextPoint = possibleMovements.get(0);
                 currentPoint.addNextPoint(nextPoint);
                 nextPoint.addPreviousPoint(currentPoint);
+                branch.add(currentPoint);
 
                 currentPoint = nextPoint;
             } else {
+                branch.add(currentPoint);
+
+                List<Point> copyList = new ArrayList<>(branch);
+
                 // it is decision point and there are 2 possible ways
                 // continue first way
                 currentPoint.setDecision();
@@ -157,25 +125,17 @@ class Grid {
                 Point secondNextPoint = possibleMovements.get(1);
                 currentPoint.addNextPoint(secondNextPoint);
                 secondNextPoint.addPreviousPoint(currentPoint);
-                setConnections(secondNextPoint);
+                setConnections(secondNextPoint, copyList);
 
                 currentPoint = firstNextPoint;
             }
-//            if (i == 100) {
-//                return;
-//            }
-            // find possible movement
+
         }
-
-
-    }
-
-    private void addToNodes(Point node) {
-        if (!nodePoints.contains(node)) {
-            node.setInList();
-            nodePoints.add(node);
+        if (branch.size() > maxBranch) {
+            maxBranch = branch.size();
         }
     }
+
 
     private boolean shouldContinue(Point point) {
         return point != lastPoint || point.isNooded();
@@ -203,6 +163,8 @@ class Grid {
         return possiblePoints;
     }
 
+
+    // ^
     private Point getNorthPoint(Point currentPoint) {
         if (currentPoint.getY() != MAX_Y) {
             return getPointByCords(currentPoint.getX(), currentPoint.getY() + 1);
@@ -210,6 +172,7 @@ class Grid {
         return null;
     }
 
+    // v
     private Point getSouthPoint(Point currentPoint) {
         if (currentPoint.getY() != 0) {
             return getPointByCords(currentPoint.getX(), currentPoint.getY() - 1);
@@ -277,21 +240,6 @@ class Grid {
 
 }
 
-class Node {
-    private String id;
-    private Point point;
-    List<Point> previousPoints = new ArrayList<>();
-    List<Point> nextPoints = new ArrayList<>();
-
-    public Node(String id, Point point, List<Point> previousPoints, List<Point> nextPoints) {
-        this.id = id;
-        this.point = point;
-        this.previousPoints = previousPoints;
-        this.nextPoints = nextPoints;
-    }
-}
-
-
 class Point {
     private final int x;
     private final int y;
@@ -302,7 +250,6 @@ class Point {
     List<Point> nextPoints = new ArrayList<>();
     private boolean nooded = false;
     private boolean isDecision = false;
-    private boolean isInList = false;
 
     public static final String ANSI_PURPLE = "\u001B[35m";
     public static final String ANSI_CYAN = "\u001B[36m";
@@ -316,10 +263,6 @@ class Point {
         this.y = y;
         this.sign = sign;
         this.ID = "" + x + y;
-    }
-
-    public void setInList() {
-        isInList = true;
     }
 
     public void setNooded() {
@@ -403,25 +346,6 @@ class Point {
 
     public void printSign() {
 
-//        if (nextPoints.size() == 2) {
-//            System.out.print(ANSI_PURPLE + "[" + 2 + "]" + ANSI_RESET);
-//            return;
-//        }
-//        if(true){
-//            if (isInList) {
-//                System.out.print(ANSI_PURPLE + "[" + ID + "]" + ANSI_RESET);
-//                return;
-//            } else {
-//                System.out.print(ANSI_RED + "[" + ID + "]" + ANSI_RESET);
-//                return;
-//            }
-//
-//        }
-//        if (isInList) {
-//            System.out.print(ANSI_PURPLE + "[" + 'L' + "]" + ANSI_RESET);
-//            return;
-//        }
-
         if (isDecision) {
             System.out.print(ANSI_PURPLE + "[" + sign + "]" + ANSI_RESET);
             return;
@@ -449,7 +373,6 @@ class Point {
                 System.out.print("[" + sign + "]");
         }
 
-        //System.out.print(ANSI_YELLOW + "[" + sign + "]" + ANSI_RESET);
     }
 
     @Override

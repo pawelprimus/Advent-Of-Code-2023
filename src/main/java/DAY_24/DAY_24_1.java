@@ -127,7 +127,7 @@ class Hailstone {
         System.out.println("A: [" + this + "] B: [" + hailstone + "]");
         Optional<Point> point = getFunction().findIntersectionPoint(hailstone.function);
         if (point.isEmpty()) {
-            System.out.println("ARE PARAREL");
+            System.out.println("ARE PARALLEL");
             return false;
         }
         Point intersectionPoint = point.get();
@@ -164,32 +164,22 @@ class Hailstone {
     private boolean isInThePast(Hailstone hailstone, Point point) {
         // check x
         if (hailstone.vX > 0) {
-            if (hailstone.pX < point.x) {
-
-            } else {
+            if (hailstone.pX >= point.x) {
                 return true;
             }
-
         } else {
-            if (hailstone.pX > point.x) {
-
-            } else {
+            if (hailstone.pX <= point.x) {
                 return true;
             }
         }
 
         // check y
         if (hailstone.vY > 0) {
-            if (hailstone.pY < point.y) {
-
-            } else {
+            if (hailstone.pY >= point.y) {
                 return true;
             }
-
         } else {
-            if (hailstone.pY > point.y) {
-
-            } else {
+            if (hailstone.pY <= point.y) {
                 return true;
             }
         }
@@ -214,12 +204,13 @@ class Hailstone {
 
 class Function {
 
-    private double m;
-    private double b;
+    // y = m * x + b
+    private final double m;
+    private final double b;
 
     public Function(Hailstone hailstone) {
-        this.m = (double) hailstone.getvY() / (double) hailstone.getvX();
-        this.b = (double) hailstone.getpY() - (double) m * (double) hailstone.getpX();
+        this.m = (double) hailstone.getvY() / hailstone.getvX();
+        this.b = hailstone.getpY() - m * hailstone.getpX();
     }
 
     public String getStringVersion() {
@@ -248,10 +239,6 @@ class Function {
 
         double x = (b2 - b1) / (m1 - m2);
         double y = m1 * x + b1;
-
-
-//        double x = (b2 - b1) / (m1 - m2);
-//        double y = m1 * x + b1;
 
         Point point = new Point(x, y);
         return Optional.of(point);

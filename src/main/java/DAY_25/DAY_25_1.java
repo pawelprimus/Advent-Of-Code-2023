@@ -65,7 +65,7 @@ public class DAY_25_1 {
         for (Connection connection : connections) {
             Component fromComponent = getComponentByValue(components, connection.getFrom());
             Component toComponent = getComponentByValue(components, connection.getFrom());
-// 22
+
             if (fromComponent.getConnections() <= 4 && toComponent.getConnections() <= 4) {
                 connectionsToRemove.add(connection);
             }
@@ -77,8 +77,8 @@ public class DAY_25_1 {
 
         }
 
-
-        for (int i = 22; i < connectionsToRemove.size() - 2; i++) {
+        // 100
+        for (int i = 100; i < connectionsToRemove.size() - 2; i++) {
             System.out.println("I " + i + "/" + connectionsToRemove.size());
             for (int j = i + 1; j < connectionsToRemove.size() - 1; j++) {
                 for (int k = j + 1; k < connectionsToRemove.size(); k++) {
@@ -134,8 +134,7 @@ public class DAY_25_1 {
 
 
         check(components, connections);
-
-
+        
     }
 
 

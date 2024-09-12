@@ -61,80 +61,25 @@ public class DAY_25_1 {
         }
         // END PREPARE CONNECTIONS
 
-        List<Connection> connectionsToRemove = new ArrayList<>();
-        for (Connection connection : connections) {
-            Component fromComponent = getComponentByValue(components, connection.getFrom());
-            Component toComponent = getComponentByValue(components, connection.getFrom());
+        List<Connection> connectionsToRemove = new ArrayList<>(connections);
 
-            if (fromComponent.getConnections() <= 4 && toComponent.getConnections() <= 4) {
-                connectionsToRemove.add(connection);
-            }
-
-//            if (fromComponent.getConnections() % 2 == 1 || toComponent.getConnections() % 2 == 1) {
-//                connectionsToRemove.add(connection);
-//            }
-
-
-        }
-
-        // 100
-        for (int i = 100; i < connectionsToRemove.size() - 2; i++) {
-            System.out.println("I " + i + "/" + connectionsToRemove.size());
-            for (int j = i + 1; j < connectionsToRemove.size() - 1; j++) {
-                for (int k = j + 1; k < connectionsToRemove.size(); k++) {
-
-                    // REMOVE connection with ids
+        for (int i = 8; i < connections.size() - 2; i++) {
+            System.out.println("I " + i + "/" + connections.size());
+            for (int j = i + 1; j < connections.size() - 1; j++) {
+                for (int k = j + 1; k < connections.size(); k++) {
 
                     List<Connection> copyConnections = new ArrayList<>(connections);
                     copyConnections.remove(connectionsToRemove.get(i));
                     copyConnections.remove(connectionsToRemove.get(j));
                     copyConnections.remove(connectionsToRemove.get(k));
-                    //System.out.println(i + " " + j + " " + k);
 
-//                    for (Connection connection : connections) {
-//                        if (connection.id != i && connection.id != j && connection.id != k) {
-//                            copyConnections.add(connection);
-//                        }
-//                    }
-                    //System.out.println(copyConnections.size());
                     check(components, copyConnections);
-
-                    //System.out.println("" + input[i] + input[j] + input[k]);
                 }
             }
         }
 
-// 8
-//        for (int i = 6; i < connections.size() - 2; i++) {
-//            System.out.println("I " + i + "/" + connections.size());
-//            for (int j = i + 1; j < connections.size() - 1; j++) {
-//                for (int k = j + 1; k < connections.size(); k++) {
-//
-//                    // REMOVE connection with ids
-//                    List<Connection> copyConnections = new ArrayList<>();
-//                    //System.out.println(i + " " + j + " " + k);
-//
-//                    for (Connection connection : connections) {
-//                        if (connection.id != i && connection.id != j && connection.id != k) {
-//                            copyConnections.add(connection);
-//                        }
-//                    }
-//                    //System.out.println(copyConnections.size());
-//                    check(components, copyConnections);
-//
-//                    //System.out.println("" + input[i] + input[j] + input[k]);
-//                }
-//            }
-//        }
-
-//        for (Component component : components) {
-//            System.out.println(component);
-//        }
-        System.out.println("CONNECTIONS: " + connections.size());
-
-
         check(components, connections);
-        
+        // RESULT 547080
     }
 
 

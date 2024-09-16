@@ -14,7 +14,6 @@ public class CreateGrid {
 
 
     public static void main(String[] args) throws Exception {
-        long startTime = System.nanoTime();
 
         String[] input = FileReader.readFileAsString(DAY, InputType.NORMAL).split("[\\r\\n]+");
 
@@ -33,19 +32,6 @@ public class CreateGrid {
         }
 
         Grid gridObj = new Grid(grid);
-
-        // gridObj.printSigns();
-
-        System.out.println("--------");
-
-        //gridObj.printSigns();
     }
 
-    private static void printEndTime(long startTime) {
-        long endTime = System.nanoTime();
-        long totalTime = endTime - startTime;
-        long millis = TimeUnit.NANOSECONDS.toMillis(totalTime);
-        long seconds = TimeUnit.NANOSECONDS.toSeconds(totalTime);
-        System.out.println("SECONDS[" + seconds + "] MILIS[" + millis + "] NANOS [" + totalTime + "]");
-    }
 }

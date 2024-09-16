@@ -1,8 +1,5 @@
 package UTILS;
 
-import java.util.ArrayList;
-import java.util.List;
-
 class Grid {
     private final Point[][] grid;
     private final int MAX_X;
@@ -39,5 +36,4 @@ class Grid {
     public Point getPointByCords(int x, int y) {
         return grid[y][x];
     }
-
 }
